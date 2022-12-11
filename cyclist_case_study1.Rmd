@@ -1,0 +1,294 @@
+---
+title: "How  Does a  Bike-Share Navigate Speedy  Success?"
+author: "Praise Chikunie"
+date: "March 11, 2022"
+output:
+  html_document: default
+---
+## Introduction
+A bicycle-sharing system, bike share program, is a shared transport service in which bicycles are made available for shared use to individuals on a short-term basis for a price or free. Many bike share systems allow people to borrow a bike from a "dock" and return it at another dock belonging to the same [system](https://en.wikipedia.org/wiki/Bicycle-sharing_system).
+
+## The Company
+Cyclistic, a bike-share company in Chicago, with meet  different  characters  and  team members, highly interested in answering the key business questions, and keen to  steps  of  the  data  analysis  process: ask, prepare, process, analyze, share, and act.
+
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime. 
+
+Until now, Cyclistic’s marketing strategy relied on building general awareness and appealing to broad consumer segments. One approach that helped make these things possible was the flexibility of its pricing plans: single-ride passes, full-day passes, and annual memberships. Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members 
+
+## Stakeholders and teams 
+* Cyclistic: A bike-share program that features more than 5,800 bicycles and 600 docking stations. Cyclistic sets itself apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with disabilities and riders who can’t use a standard two-wheeled bike. The majority of riders opt for traditional bikes; about 8% of riders use the assistive options. Cyclistic users are more likely to ride for leisure, but about 30% use them to commute to work each day. 
+
+* Lily Moreno: The director of marketing and manager. Moreno is responsible for the development of campaigns and initiatives to promote the bike-share program. These may include email, social media, and other channels.
+
+* Cyclistic marketing analytics team: A team of data analysts who are responsible for collecting, analyzing, and reporting data that helps guide Cyclistic marketing strategy. 
+
+## Ask Phase
+#### Business Task
+* How do annual members and casual riders use Cyclistic bikes differently? 
+* Design marketing strategies aimed at converting casual riders into annual members. 
+
+## Preparing the data
+The dataset was downloaded from divvy trip [data](https://divvy-tripdata.s3.amazonaws.com/index.html).
+
+The data used was collected by Cyclistic, for this analysis, six months data was used; from January 2020 to June 2020.The data was accessible in a zip folder, and downloaded to a personal computer. The dataset desired months used for this analysis was merged into one dataset in R.
+
+## Process
+##### Loading the appropriate packages
+```{r}
+library(readr)
+library(skimr)
+library(dplyr)
+library(lubridate)
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+```
+
+##### Loading the dataset for the year, 2020
+```{r}
+Divvy_Trips_Q1 <- read_csv("Divvy_Trips_2020_Q1.csv")
+Divvy_Trips2 <- read_csv("202004-divvy-tripdata.csv")
+Divvy_Trips3 <- read_csv("202005-divvy-tripdata.csv")
+Divvy_Trips4 <- read_csv("202006-divvy-tripdata.csv")
+```
+
+#### Cleaning the dataset
+```{r}
+#Checking for null values in the dataset
+is.null(Divvy_Trips_Q1)
+is.null(Divvy_Trips2)
+is.null(Divvy_Trips3)
+is.null(Divvy_Trips4)
+```
+
+```{r}
+#checking for duplicate data
+sum(duplicated(Divvy_Trips_Q1))
+sum(duplicated(Divvy_Trips2))
+sum(duplicated(Divvy_Trips3))
+sum(duplicated(Divvy_Trips4))
+#the Start_station_id and end_station_id are in decimal instead of integer
+
+```
+
+###### Merging all the dataset into one
+```{r}
+
+Divvy_Trips <- rbind(Divvy_Trips_Q1, Divvy_Trips2, Divvy_Trips3, Divvy_Trips4)
+
+View(Divvy_Trips)
+str(Divvy_Trips)
+```
+
+```{r}
+#Checking for null values in the dataset
+colSums(is.na(Divvy_Trips))
+
+```
+
+###### Replacing null values to N/A
+```{r}
+
+Divvy_Trips$start_station_name[Divvy_Trips$start_station_name ==""]<- "None"
+
+Divvy_Trips$end_station_name[Divvy_Trips$end_station_name ==""]<- "None"
+
+```
+
+###### Droping the columns: latitude , longitude , start station Id , end Station Id.
+```{r}
+Divvy_Trips = subset(Divvy_Trips, select = -c(start_lat, start_lng, end_lat, end_lng, start_station_id , end_station_id))
+```
+
+###### Checking for how many distict values in the column member_casual
+```{r}
+n_distinct(Divvy_Trips$member_casual) #..this means that there are two distinct variables, member and casual
+n_distinct(Divvy_Trips$ride_id) 
+n_distinct(Divvy_Trips$rideable_type) 
+
+```
+
+###### Checking for how many causual riders and annual members on the dataset
+```{r}
+table(Divvy_Trips['member_casual'])
+Divvy_Trips%>%
+  count(member_casual)
+
+```
+
+######  Checking for how many rideable types on the dataset and how many members use rideable types on the dataset
+```{r}
+
+#Checking for how many rideable types on the dataset
+table(Divvy_Trips['rideable_type'])
+Divvy_Trips%>%
+  count(rideable_type)
+
+#Checking for how many members use rideable types on the dataset
+table(Divvy_Trips['rideable_type', 'member_casual'])
+Divvy_Trips%>%
+  count(rideable_type, member_casual)
+```
+
+```{r}
+skim(Divvy_Trips)
+#this shows that more member riders use classic bikes, docked bikes and electric bikes than casual riders.
+
+```
+
+```{r}
+table(Divvy_Trips$member_casual, useNA = "ifany")   #this shows that there are no null values.
+
+```
+
+##### Transforming the dataset
+
+```{r}
+Divvy_Trips$rideDate<-as.Date(Divvy_Trips$started_at)
+
+Divvy_Trips$started_at<-as_datetime(Divvy_Trips$started_at)
+Divvy_Trips$ended_at<-as_datetime(Divvy_Trips$ended_at)
+
+# Adding a new column to the dataset from 'ride date'.
+Divvy_Trips$month<-format(as.Date(Divvy_Trips$rideDate),"%B")
+Divvy_Trips$day <-format(as.Date(Divvy_Trips$rideDate),"%d")
+Divvy_Trips$year<-format(as.Date(Divvy_Trips$rideDate),"%Y")
+Divvy_Trips$day_of_week<-format(as.Date(Divvy_Trips$rideDate),"%A")
+
+```
+```{r}
+# View the column names
+colnames(Divvy_Trips)
+```
+
+###### Length of the ride
+```{r}
+Divvy_Trips <- Divvy_Trips%>%
+  mutate(length_of_ride=ended_at - started_at)
+head(Divvy_Trips)
+
+Divvy_Trips$length_of_ride <- as.numeric(Divvy_Trips$length_of_ride)
+str(Divvy_Trips$length_of_ride)
+```
+
+```{r}
+#checking for hours and minutes used to complete the ride
+Divvy_Trips$hour_minutes_of_ride <- hms::as_hms(Divvy_Trips$length_of_ride)
+View(Divvy_Trips)
+```
+
+##### Filtering the length of ride less than 0 seconds
+```{r}
+biketrip <- filter(Divvy_Trips,length_of_ride>0)
+
+```
+
+#### Average, minimum and maximum length of ride
+```{r}
+##average, minimum and maximum length of ride
+
+biketrip%>%
+  summarise(min_length=min(length_of_ride),max_length=max(length_of_ride),average_length=mean(length_of_ride))
+View(biketrip)
+
+```
+
+##### Length of Ride by member_type
+```{r}
+aggregate(length_of_ride~member_casual, data= biketrip,mean)
+aggregate(length_of_ride~member_casual, data= biketrip,median)
+aggregate(length_of_ride~member_casual, data= biketrip,max)
+#this means that casual riders have more ride lengths than member riders.
+```
+
+##### Sorting the data
+```{r}
+#sorting the data by weekday
+biketrip$day_of_week<-ordered(biketrip$day_of_week,levels=c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'))
+biketrip%>%count(day_of_week,member_casual)
+#sorting the data by month
+biketrip$month<-ordered(biketrip$month,levels=c('January', 'February', 'March', 'April', 'May', 'June'))
+biketrip%>%count(month,member_casual)
+biketrip%>%count(member_casual, rideable_type)
+```
+
+```{r}
+##average, max and min length of ride for 6 months
+mean_r_length <-as.numeric(mean(biketrip$length_of_ride))/60
+cat("The average ride length over 6 months is;", mean_r_length, "minutes")
+
+
+
+min_r_length <-as.numeric(min(biketrip$length_of_ride))/60
+cat("The minimum ride length over 6 months is;", min_r_length, "minutes")
+
+max_r_length <- as.numeric(max(biketrip$length_of_ride))/3600
+cat("The maximum ride length over 6 months is;", max_r_length, "hours")
+```
+
+
+#visualization
+For the visualization, two packages have been installed and loaded. For this analysis, ggplot2 and corrplot was used.
+```{r}
+biketrip%>%
+  group_by(member_casual,day_of_week)%>%
+  summarise(total_ride_duration=mean(length_of_ride))%>%
+  ggplot(mapping=aes(x=member_casual,y=total_ride_duration,fill=day_of_week)) +
+  geom_bar(position="Dodge",stat = "identity") +
+  facet_wrap(~day_of_week) +
+  labs(title="Average ride length by day of week")
+```
+
+
+
+```{r}
+
+biketrip%>%
+  group_by(member_casual,year)%>%
+  summarise(Ridenumbers=n())%>%
+  ggplot(mapping=aes(x=year,y=Ridenumbers,fill=member_casual)) +
+  geom_bar(position="Dodge",stat = "identity") +
+  labs(title="Average ride length by year")
+```
+```{r}
+str(biketrip$length_of_ride)
+par(mfrow=c(1,1))
+
+
+boxplot(length_of_ride ~ member_casual,
+        data = biketrip,
+        main = "distribution of length by week",
+        xlab = "casual_member",
+        ylab = "length of ride",
+        col = c("orange", "yellow"))
+
+
+
+boxplot(biketrip$month ~ biketrip$member_casual,
+        data = biketrip,
+        main = "Month Vs Riders",
+        xlab = "Member Riders and Casual Riders",
+        ylab = "Month",
+        col = c("pink", "pink1")) 
+
+```
+
+
+## Observations and trends
+From the Divvy Trips six months data, the analysis discovered some trends which includes the following:
+
+* There are more member riders than casual riders but casual riders engage in more longer rides than member riders.
+
+* There is a longer ride length for members on saturdays and Sundays when compared to other days.
+
+* There is a longer ride length for casual riders on thursday and sunday than any other day of the week. 
+
+
+## Recommendations
+In correlation with the analysis, the result leads to the following recommendations being made:
+
+* Cyclist can promote  shorter rides for casual riders with incentives on casual riders who complete more shorter rides and subscribe to membership.
+
+* Cyclist could promote more friendly advertisements to engage member riders on longer rides.
+
+* Cyclist can send more member rider a motivation quote or text, to motivate them on the need to keep riding; as this might help members stay more on longer rides.
