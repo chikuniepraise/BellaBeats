@@ -1,0 +1,345 @@
+---
+title: "Case Study - Bellabeat Wellness Technology"
+author: "Praise Chikunie"
+date: "February 24, 2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+## Introduction
+Smart devices in recent times more depended in health and wellness. Smart devices helps in analyzing fitness data, thereby providing insights.
+
+It tracks health data related to their activity, sleep, stress, habits and wellness.Smart devices were one of the first wearable devices that promoted self-monitoring and were typically associated with fitness tracking. These technologies are used to gather data at all times during the day. 
+
+The flexibility in this technology also allows for more positive and accurate results.[link](https://en.wikipedia.org/wiki/Digital_health)
+
+
+## About the Company
+Bellabeat is a small successful, a high-tech company that manufactures health-focused smart products.
+
+Urska Srsen and Sando Mur are BellaBeat's cofounders.Founded in 2013, Bellabeat has grown rapidly and quickly positioned itself as a tech-driven wellness company for women. The company's collection of data on activity, sleep, stress, and reproductive health has allowed Bellabeat to empower women with knowledge about their own health and habits. 
+ 
+By 2016, Bellabeat had opened offices around the world and launched multiple products. Bellabeat products became available through a growing number of online retailers in addition to their own e-commerce channel on their website. 
+
+The company has invested in local advertising media, such as radio, out-of-home billboards, print, and television, but focuses on digital marketing extensively. Bellabeat invests year-round in Google Search, maintaining active Facebook and Instagram pages, and consistently engages users on Twitter. Additionally, Bellabeat runs video ads on Youtube and display ads on the Google Display Network to support campaigns around key marketing dates. 
+
+
+## Products
+*  Bellabeat app: The Bellabeat app provides users with health data related to their activity, sleep, stress, menstrual cycle, and mindfulness habits. it provides insights on their current habits and make healthy decisions.
+
+* Leaf: Bellabeat's classic wellness tracker can be worn as a bracelet, necklace, or clip. The Leaf tracker connects to the Bellabeat app to track activity, sleep, and stress.
+
+* Time: This wellness watch combines the timeless look of a classic timepiece with smart technology to track user activity, sleep, and stress. The Time watch connects to the Bellabeat app to provide you with insights into your daily wellness.
+
+* Spring: This is a water bottle that tracks daily water intake using smart technology to ensure that you are appropriately hydrated throughout the day. The Spring bottle connects to the Bellabeat app to track  hydration levels. 
+
+
+
+## Business Task - Ask
+* Analyze smart device usage data, apply it to one of Bellabeat's products and its marketing strategy in order to gain insight and discover new and effective marketing strategies and growth opportunities.
+
+###### Stake Holders
+*  Urska Srsen: Bellabeat's cofounder and Chief Creative Officer 
+*  Sando Mur: Mathematician and Bellabeat's cofounder; key member of the Bellabeat executive team 
+*Bellabeat marketing analytics team: A team of data analysts responsible for collecting, analyzing, and reporting data that helps guide Bellabeat's marketing strategy.
+
+## Preparing the data
+The "Fitbit Fitness Tracker Data" was downloaded from Kaggle. The dataset was  cleaned and processed via RStudio.
+
+The appropriate packages were installed and loaded
+
+```{r}
+library('tidyverse')
+library('tidyr')
+library('dplyr')
+```
+
+
+```{r}
+#installing the read package
+library('readr')
+```
+
+#### Importing the dataset and assigning them to a variable
+
+```{r}
+dailyActivity <- read.csv('dailyActivity_merged.csv')
+dailyCalories <- read.csv('dailyCalories_merged.csv')
+dailyIntensities <- read.csv('dailyIntensities_merged.csv')
+heartrate <- read.csv('heartrate_seconds_merged.csv')
+dailySteps <- read.csv('dailySteps_merged.csv')
+sleepDay <- read.csv('sleepDay_merged.csv')
+weight <- read.csv('weightLogInfo_merged.csv')
+```
+```{r}
+#Different Time Frame
+hourly_calories <- read.csv("hourlyCalories_merged.csv")
+hourly_intensities <- read.csv("hourlyIntensities_merged.csv")
+hourly_steps <- read.csv("hourlySteps_merged.csv")
+daily_sleep <- read.csv("sleepDay_merged.csv")
+```
+
+###### Preview the dataset using the structure function
+```{r}
+str(dailyActivity)
+
+```
+```{r}
+str(dailyIntensities)
+
+```
+
+```{r}
+str(dailySteps)
+
+```
+```{r}
+str(dailyCalories)
+
+```
+```{r}
+str(sleepDay)
+```
+```{r}
+str(hourly_calories)
+
+```
+```{r}
+str(hourly_intensities)
+
+```
+```{r}
+str(daily_sleep)
+
+```
+```{r}
+str(hourly_steps)
+```
+```{r}
+#Varaibles Contained in Daily_Step, Daily_Intensities, Daily_Calories is present in Daily Activities
+# To Avoid duplicate data We are dropping the 3 Dataframes 
+rm(dailyIntensities,dailyCalories,dailySteps)
+```
+
+
+```{r}
+# cleaning the data
+#Checking For NA's Value #checking for nulls
+#is.null() or colSums(is.na())
+colSums(is.na(dailyActivity))
+colSums(is.na(daily_sleep))
+colSums(is.na(hourly_calories))
+colSums(is.na(hourly_steps))
+colSums(is.na(sleepDay))
+colSums(is.na(weight))
+colSums(is.na(heartrate))
+```
+
+#### Fat in weight Contains 65 Na's/Null Values 
+#### The Information aboutbFat isnt Neccesary as most of the value are NA's 
+#### 2 Values are only present out of 67values
+#### So We remove it from the column
+```{r}
+rm(weight) #  Removing Table Weight ----Successful 
+
+```
+
+### The dates are in character 'chr', instead of a date, to change this to a date format, we install and load the lubridate package. The lubridate package helps change characters to date formats.
+
+
+```{r}
+#install.packages('lubridate')
+library('lubridate')
+
+```
+
+```{r}
+#Working on the Dates
+dailyActivity$ActivityDate<-as.Date(dailyActivity$ActivityDate
+                                    , format = "%m/%d/%y")
+sleepDay$SleepDay<-as.Date(sleepDay$SleepDay
+                           , format = "%m/%d/%y")
+sleepDay$SleepDay<-as.Date(sleepDay$SleepDay
+                           , format = "%m/%d/%y")
+daily_sleep$SleepDay<-as.Date(sleepDay$SleepDay
+                           , format = "%m/%d/%y")
+str(daily_sleep)
+```
+
+#### Checking for duplicate ids
+
+```{r}
+unique(dailyActivity$Id)
+n_distinct(dailyActivity$Id)
+
+```
+```{r}
+unique(daily_sleep$Id)
+n_distinct(daily_sleep$Id)
+
+```
+```{r}
+unique(hourly_calories$Id)
+n_distinct(hourly_calories$Id)
+
+```
+
+```{r}
+unique(hourly_intensities$Id)
+n_distinct(hourly_intensities$Id)
+
+```
+```{r}
+unique(hourly_steps$Id)
+n_distinct(hourly_steps$Id)
+```
+
+#### Checking for and removing duplicate data.
+
+Checking for and removing duplicates is essential as it cleans the datasets and avoid possible errors.
+
+```{r}
+#Checking any duplicate row in any of our dataframe 
+
+sum(duplicated(dailyActivity))
+
+```
+```{r}
+sum(duplicated(daily_sleep))
+#3 Duplicted row
+
+```
+```{r}
+sum(duplicated(hourly_calories))
+
+```
+```{r}
+sum(duplicated(hourly_intensities))
+
+```
+```{r}
+sum(duplicated(hourly_steps))
+
+```
+```{r}
+#Removing the duplicated row in daily_sleep
+sleep_daily<- daily_sleep[!duplicated(daily_sleep), ]
+sum(duplicated(sleep_daily))
+str(sleep_daily)
+```
+```{r}
+#converting time frame from character to date 
+
+hourly_calories$ActivityHour <- mdy_hms(hourly_calories$ActivityHour)
+hourly_intensities$ActivityHour <-mdy_hms(hourly_intensities$ActivityHour)
+hourly_steps$ActivityHour <-mdy_hms(hourly_steps$ActivityHour)
+
+```
+
+## Analyzing the Dataset.
+In order to start the analysis, the dataset would be merged, Merging the dataset makes the analysis easily accessible and organized. In merging the datasets 'sleep_daily' and 'dailyActivity', there should be a unique column, therefore,  the 'SleepDay' column was renamed to 'ActivityDate'.
+
+```{r}
+#renaming our dataset
+sleep_daily<- sleep_daily %>%
+  rename(ActivityDate = SleepDay)
+str(dailyActivity)
+str(sleep_daily)
+```
+
+## Merging the datasets "dailyActivity" and "sleep_daily" ensures that the dataset is organized.
+
+###### the merged data would be named 'sleep_n_daily_activity'.
+```{r}
+sleep_n_daily_activity <- merge(dailyActivity, sleep_daily, by=c("Id", "ActivityDate"))
+str(sleep_n_daily_activity)
+```
+
+
+
+### Loading the package for plotting visuals. 
+
+The ggplot2 and corrplot are a packages that helps create visualizations. The corrplot would create visuals that shows the correlation or relationship between the daily activities and calories of users of the Bellabeat app.
+
+```{r}
+library("ggplot2")
+
+library("corrplot")
+
+```
+
+## Plotting the relationship between Total steps and calories burned.
+
+In plotting the relationship between total steps and calories burned, the 'sleep_n_daily_activity' which is the merged dataset of 'dailyActivity' and 'sleepdaily' datasets was used. 
+This analysis would help discover trends on how the total steps covered by users can affect the calories burned. 
+
+```{r}
+ggplot(sleep_n_daily_activity) +
+  geom_point(mapping = aes(x=TotalSteps, y=Calories, color = ActivityDate)) +
+  labs(title = "Relationship between TotalSteps and Calories")
+```
+
+
+This plot shows the relationship between Total steps and Calories burnt in the process. This states that the more less steps taken, the lesser the calories burnt and also the more steps taken, the higher the calories burnt.
+
+
+
+## Analyzing the correlation between Calories burned and Daily Activity Level.
+This would help analyze and gain insight on the dataset even further, by checking the relationship between the daily activities and Calories burned of users of the BellaBeat's app.
+
+This analysis would help uncover trends on users very-active Minutes, fairly-active minutes, sedentary minutes, lightly active minutes on calories. For this analysis, I used the original dataset 'dailyActivity'
+
+#### let's View the dataset
+
+```{r}
+glimpse(dailyActivity)
+
+View(dailyActivity)
+```
+
+
+###Plotting a density graph showing the relationship in density of calories burned by users.
+This shows that the more density of very active minutes, the higher calories burned. The calories burned are stabilized when there is low density on active minutes.
+```{r}
+ggplot(data = dailyActivity, mapping = aes(x=Calories, fill = VeryActiveMinutes, color = "VeryActiveMinutes" )) +
+  geom_density(bw = 2)
+
+```
+
+
+###Plotting the correlation graph
+
+```{r}
+corrplot(corr = cor(dailyActivity[11:15]), order = "AOE",
+         method = "circle",
+         type = "upper", tl.pos = "lt")
+
+corrplot(corr = cor(dailyActivity[11:15]), add= TRUE, order = "AOE",
+         method = "pie", diag = FALSE,
+         type = "lower", tl.pos = "n", cl.pos = "n")
+```
+This plot suggests that there is a positive correlation between calories burned and active minutes and also a strong negative correlation or relationship between sendentary minutes and calories burned.
+
+## Observations and trends
+From the analysis, the result shows a positive correlation between calories burned and user's activity. The relationship trend discovered as a result of the includes:
+
+* Very-active minutes in the dataset have a positive correlation to calories burned. Therefore, Active users hava a positive relation with calories burned.
+
+* The longer the total steps the higher the calories burnt and more likely for active users to have sufficient number of sleep.
+
+* Non-active users have less steps covered and there is a strong negative correlation with calories burned and total steps, and therefore, are likely to have a higher insufficient amount of sleep. 
+
+
+## Recommendations
+In correlation with the analysis, the result leads to the following recommendations being made:
+
+* Bellabeat app can enhance its sleep tracking device and promote a friendly reminder to Users that oversleep on the amount of activity needed.
+
+* Bellabeat app can also promote a friendly reminder to Users that have insufficient amount of sleep and very active minutes on the need to reduce workout activities and encourage more rest and sleep.
+
+* Great priority should be placed especially on providing motivation or encouragement alerts to users that would want to lose weight and are on sedentary active minutes.
+
+* Bellabeat app can send daily notifications on sleep or activity recommendations to promote the sleep/non-active relation and also a reminder on when a user is supposed to get some rest as this could create a better sleeping habit by being more active in everyday life.
+
